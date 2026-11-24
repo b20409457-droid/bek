@@ -1,0 +1,364 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apple Tree English Quiz</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: linear-gradient(#83d9ff, #e6f9ff);
+  color: #17452a;
+}
+
+h1 {
+  color: #185e29;
+  margin: 18px 5px;
+}
+
+.game {
+  max-width: 600px;
+  margin: auto;
+  padding: 12px;
+}
+
+.tree {
+  position: relative;
+  width: 320px;
+  height: 310px;
+  margin: 15px auto;
+}
+
+.trunk {
+  position: absolute;
+  width: 65px;
+  height: 165px;
+  background: #86502b;
+  bottom: 0;
+  left: 128px;
+  border-radius: 20px;
+}
+
+.leaves {
+  position: absolute;
+  background: #269b43;
+  width: 270px;
+  height: 245px;
+  border-radius: 48% 48% 40% 40%;
+  top: 0;
+  left: 25px;
+  box-shadow: inset -12px -10px #167c32;
+}
+
+.apples {
+  position: absolute;
+  top: 15px;
+  left: 25px;
+  width: 270px;
+  height: 220px;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  place-items: center;
+}
+
+.apple {
+  font-size: 33px;
+  animation: appear .3s;
+}
+
+@keyframes appear {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+
+.fallen {
+  font-size: 25px;
+  min-height: 50px;
+}
+
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+  margin: 15px auto;
+  box-shadow: 0 5px 15px #0002;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin: 9px 0;
+  border: none;
+  border-radius: 12px;
+  background: #238b46;
+  color: white;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #176b35;
+}
+
+button:disabled {
+  opacity: .6;
+}
+
+#feedback {
+  font-size: 18px;
+  font-weight: bold;
+  min-height: 30px;
+}
+
+#next {
+  background: #f1a51d;
+  color: #222;
+}
+
+.hidden { display: none; }
+
+.stats {
+  font-size: 18px;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+<h1>🍎 APPLE TREE ENGLISH QUIZ</h1>
+<p>Answer questions and collect apples!</p>
+
+<div class="card">
+  <div class="stats">
+    🌳 Apples on tree: <span id="count">10</span>
+  </div>
+
+  <div class="tree">
+    <div class="leaves"></div>
+    <div class="trunk"></div>
+    <div class="apples" id="apples"></div>
+  </div>
+
+  <div class="stats">
+    🍎 Fallen apples:
+    <span id="fallenCount">0</span>
+  </div>
+
+  <div class="fallen" id="fallen"></div>
+</div>
+
+<div class="card" id="quiz">
+  <h2 id="number">Question 1 / 10</h2>
+  <h2 id="question">Ready?</h2>
+  <div id="answers"></div>
+  <p id="feedback"></p>
+  <button id="next" class="hidden" onclick="nextQuestion()">
+    NEXT QUESTION ➜
+  </button>
+</div>
+
+<div class="card hidden" id="result">
+  <h1>🎉 GAME OVER!</h1>
+  <h2 id="final"></h2>
+  <p id="details"></p>
+  <button onclick="restart()">PLAY AGAIN 🔄</button>
+</div>
+
+</div>
+
+<script>
+
+const questions = [
+{
+ q: "What is the plural of 'Apple'?",
+ a: ["Apples", "Applees", "Appls", "Applese"],
+ c: 0
+},
+{
+ q: "Choose the correct word: She ___ happy.",
+ a: ["am", "are", "is", "be"],
+ c: 2
+},
+{
+ q: "What does 'Tree' mean?",
+ a: ["Цветок", "Дерево", "Трава", "Лист"],
+ c: 1
+},
+{
+ q: "What is the opposite of 'Big'?",
+ a: ["Tall", "Long", "Small", "Wide"],
+ c: 2
+},
+{
+ q: "What is the past tense of 'Go'?",
+ a: ["Goed", "Went", "Going", "Goes"],
+ c: 1
+},
+{
+ q: "Choose the correct sentence.",
+ a: [
+   "He play football.",
+   "He playing football.",
+   "He plays football.",
+   "He playes football."
+ ],
+ c: 2
+},
+{
+ q: "What does 'Beautiful' mean?",
+ a: ["Красивый", "Грустный", "Быстрый", "Сильный"],
+ c: 0
+},
+{
+ q: "I ___ a student.",
+ a: ["is", "are", "am", "be"],
+ c: 2
+},
+{
+ q: "What is the plural of 'Child'?",
+ a: ["Childs", "Children", "Childes", "Childrens"],
+ c: 1
+},
+{
+ q: "Choose the correct word: Yesterday I ___ pizza.",
+ a: ["eat", "eats", "eating", "ate"],
+ c: 3
+}
+];
+
+let current = 0;
+let treeApples = 10;
+let fallenApples = 0;
+let correctAnswers = 0;
+let answered = false;
+
+function drawTree() {
+  const container = document.getElementById("apples");
+  container.innerHTML = "";
+
+  for(let i = 0; i < treeApples; i++) {
+    const apple = document.createElement("span");
+    apple.className = "apple";
+    apple.textContent = "🍎";
+    container.appendChild(apple);
+  }
+
+  document.getElementById("count").textContent = treeApples;
+  document.getElementById("fallenCount").textContent = fallenApples;
+  document.getElementById("fallen").textContent =
+    "🍎 ".repeat(Math.min(fallenApples, 20));
+}
+
+function showQuestion() {
+  answered = false;
+
+  document.getElementById("number").textContent =
+    "Question " + (current + 1) + " / 10";
+
+  document.getElementById("question").textContent =
+    questions[current].q;
+
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("next").classList.add("hidden");
+
+  const box = document.getElementById("answers");
+  box.innerHTML = "";
+
+  questions[current].a.forEach((answer, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = answer;
+    btn.onclick = () => checkAnswer(i);
+    box.appendChild(btn);
+  });
+}
+
+function checkAnswer(index) {
+  if(answered) return;
+  answered = true;
+
+  const correct = questions[current].c;
+  const buttons = document.querySelectorAll("#answers button");
+
+  buttons.forEach(btn => btn.disabled = true);
+
+  if(index === correct) {
+    treeApples = Math.max(0, treeApples - 1);
+    fallenApples++;
+    correctAnswers++;
+
+    document.getElementById("feedback").textContent =
+      "✅ CORRECT! An apple fell from the tree! 🍎";
+  } else {
+    treeApples++;
+
+    document.getElementById("feedback").textContent =
+      "❌ WRONG! One more apple grows on the tree! 🌳";
+  }
+
+  drawTree();
+
+  buttons[correct].style.background = "#168b45";
+  if(index !== correct) {
+    buttons[index].style.background = "#d34242";
+  }
+
+  document.getElementById("next").classList.remove("hidden");
+}
+
+function nextQuestion() {
+  current++;
+
+  if(current >= questions.length) {
+    finishGame();
+  } else {
+    showQuestion();
+  }
+}
+
+function finishGame() {
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+
+  document.getElementById("final").textContent =
+    correctAnswers >= 7
+    ? "🏆 GREAT JOB!"
+    : "🌱 KEEP PRACTICING!";
+
+  document.getElementById("details").innerHTML =
+    "Correct answers: " + correctAnswers + " / 10<br>" +
+    "Fallen apples: " + fallenApples + "<br>" +
+    "Apples on tree: " + treeApples;
+}
+
+function restart() {
+  current = 0;
+  treeApples = 10;
+  fallenApples = 0;
+  correctAnswers = 0;
+
+  document.getElementById("quiz").classList.remove("hidden");
+  document.getElementById("result").classList.add("hidden");
+
+  drawTree();
+  showQuestion();
+}
+
+drawTree();
+showQuestion();
+
+</script>
+
+</body>
+</html>
